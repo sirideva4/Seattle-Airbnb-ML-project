@@ -1,0 +1,141 @@
+---
+title: "Assignment_3_ML"
+output: html_document
+date: '2022-10-21'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+num_data <- read.csv(file = "C:/Users/sirid/OneDrive/Documents/ML/data_num.csv")
+mixed_data <- read.csv(file = "C:/Users/sirid/OneDrive/Documents/ML/data_mixed.csv")
+```
+
+```{r}
+str(mixed_data)
+```
+
+```{r}
+df = subset(mixed_data, select = -c(neighbourhood ) )
+```
+
+```{r}
+str(df)
+```
+
+```{r}
+#df[1:9] <- lapply(df[1:9], as.numeric)
+library(caTools)
+sample <- sample.split(df$room_type, SplitRatio = 0.7)
+train  <- subset(df, sample == TRUE)
+test   <- subset(df, sample == FALSE)
+```
+
+```{r}
+library(rpart)
+tree = rpart(room_type ~ ., data = train, cp=0.4, method = "class" ,control = rpart.control(minsplit = 30, minbucket = 10, maxdepth = 5, usesurrogate = 2, xval =10 ))
+print(rpart.plot::rpart.plot(tree, box.palette="RdBu", nn=TRUE))
+```
+
+```{r}
+data_test_new <- test                                # Duplicate test data set
+data_test_new$property_type[which(!(data_test_new$property_type %in% unique(train$property_type)))] <- NA  # Replace new levels by NA
+data_test_new
+```
+```{r}
+DT_Prediction= predict(tree, subset(data_test_new, select = -c(room_type )) , type="class")
+```
+
+```{r}
+conf.matrix <- table(test$room_type, DT_Prediction)
+rownames(conf.matrix) <- paste("Actual", rownames(conf.matrix), sep = ":")
+colnames(conf.matrix) <- paste("Pred", colnames(conf.matrix), sep = ":")
+print(conf.matrix)
+```
+
+The accuracy is 91.6%. 
+
+```{r}
+df$host_listings_count = discretize(df$host_listings_count, method = "interval")
+df$host_verifications = discretize(df$host_verifications, method = "interval")
+df$accommodates = discretize(df$accommodates, method = "interval")
+df$price = discretize(df$price, method = "frequency")
+df$bathrooms = discretize(df$bathrooms, method = "interval")
+df$bedrooms = discretize(df$bedrooms, method = "interval")
+df$security_deposit = discretize(df$security_deposit, method = "frequency")
+df$cleaning_fee = discretize(df$cleaning_fee, method = "frequency")
+df$extra_people = discretize(df$extra_people, method = "interval")
+df$minimum_nights = discretize(df$minimum_nights, method = "interval")
+df$availability_365 = discretize(df$availability_365, method = "frequency")
+df$number_of_reviews = discretize(df$number_of_reviews, method = "frequency")
+df$review_scores_rating = discretize(df$review_scores_rating, method = "frequency")
+df$review_scores_cleanliness = discretize(df$review_scores_cleanliness, method = "interval")
+df$reviews_per_month = discretize(df$reviews_per_month, method = "frequency")
+```
+
+```{r}
+sample <- sample.split(df$room_type, SplitRatio = 0.7)
+train_dis  <- subset(df, sample == TRUE)
+test_dis   <- subset(df, sample == FALSE)
+```
+
+```{r}
+tree_dis = rpart(room_type ~ ., data = train_dis,cp=0.8, method = "class" ,control = rpart.control(minsplit = 30, minbucket = 10, maxdepth = 5, usesurrogate = 2, xval =10 ))
+print(rpart.plot::rpart.plot(tree, box.palette="RdBu", nn=TRUE))
+```
+
+```{r}
+data_test_new <- test_dis                                # Duplicate test data set
+data_test_new$property_type[which(!(data_test_new$property_type %in% unique(train$property_type)))] <- NA  # Replace new levels by NA
+data_test_new
+```
+
+```{r}
+DT_Prediction= predict(tree_dis,subset(data_test_new, select = -c(room_type )) , type="class")
+```
+
+```{r}
+conf.matrix <- table(test_dis$room_type, DT_Prediction)
+rownames(conf.matrix) <- paste("Actual", rownames(conf.matrix), sep = ":")
+colnames(conf.matrix) <- paste("Pred", colnames(conf.matrix), sep = ":")
+print(conf.matrix)
+```
+
+The accuracy is  92.5%
+
+https://stackoverflow.com/questions/59447378/sklearn-plot-tree-plot-is-too-small
+https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+https://stackabuse.com/decision-trees-in-python-with-scikit-learn/
+https://data36.com/coding-a-decision-tree-in-python-classification-tree-gini-impurity/
+https://statisticsglobe.com/r-error-model-frame-default-factor-x-has-new-levels
+
+```{r}
+nb_data = df
+nb_data
+```
+
+```{r}
+library(e1071)
+
+sample <- sample.split(nb_data$room_type, SplitRatio = 0.7)
+train_nb  <- subset(nb_data, sample == TRUE)
+test_nb   <- subset(nb_data, sample == FALSE)
+```
+
+
+```{r}
+model_nb = naiveBayes(room_type ~ . , train_nb)
+print(model_nb)
+pred = predict(model_nb, test_nb, type = "class")
+```
+
+
+```{r}
+cMatrix <- table(pred, test_nb$room_type)
+cMatrix
+```
+ The accuracy is 90.2%
+
+
